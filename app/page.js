@@ -1,13 +1,67 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import { papers, stages } from "../lib/data";
-
-function countByStage(stage) {
-  return papers.filter((paper) => paper.stage === stage).length;
-}
+import SimpleRatingWidget from "../components/SimpleRatingWidget";
+import { stages } from "../lib/data";
+import { supabase } from "../lib/supabase";
+import { calculateStage } from "../lib/ratingUtils";
 
 export default function HomePage() {
+  const [papers, setPapers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // 从Supabase获取已发布的文章
+  useEffect(() => {
+    async function fetchPublishedPapers() {
+      try {
+        const { data, error } = await supabase
+          .from('submissions')
+          .select('*')
+          .eq('status', 'published')
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        if (error) throw error;
+
+        // 转换数据格式以匹配现有的数据结构
+        const formattedPapers = data.map(submission => {
+          const stage = calculateStage(
+            submission.average_rating || 0,
+            submission.rating_count || 0
+          );
+
+          return {
+            slug: submission.id,
+            title: submission.title,
+            author: submission.author_name || 'Anonymous',
+            date: new Date(submission.created_at).toLocaleDateString('en-CA'),
+            stage: stage.slug,
+            stageCn: stage.cn,
+            excerpt: submission.abstract?.substring(0, 150) + '...' || '',
+            excerptCn: submission.abstract?.substring(0, 150) + '...' || '',
+            averageRating: submission.average_rating || 0,
+            ratingCount: submission.rating_count || 0
+          };
+        });
+
+        setPapers(formattedPapers);
+      } catch (error) {
+        console.error('Error fetching papers:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchPublishedPapers();
+  }, []);
+
+  function countByStage(stage) {
+    return papers.filter((paper) => paper.stage === stage).length;
+  }
+
   return (
     <>
       <Header />
@@ -154,46 +208,83 @@ export default function HomePage() {
               </div>
 
               <div className="preprint-list">
-                {papers.map((paper) => (
-                  <article className="preprint-row" key={paper.slug}>
-                    <div>
-                      <h3 className="preprint-row__title">
-                        <Link href={`/preprints/${paper.slug}`}>{paper.title}</Link>
-                      </h3>
-                      <p className="preprint-row__excerpt">
-                        <span className="lang-en">{paper.excerpt}</span>
-                        <span className="lang-zh">{paper.excerptCn}</span>
-                      </p>
-                    </div>
+                {loading ? (
+                  <div style={{ padding: "40px 0", textAlign: "center", color: "var(--muted)" }}>
+                    <span className="lang-en">Loading articles...</span>
+                    <span className="lang-zh">加载中...</span>
+                  </div>
+                ) : papers.length === 0 ? (
+                  <div style={{ padding: "40px 0", textAlign: "center", color: "var(--muted)" }}>
+                    <span className="lang-en">No published articles yet.</span>
+                    <span className="lang-zh">暂无已发表的文章。</span>
+                  </div>
+                ) : (
+                  papers.map((paper) => (
+                    <article className="preprint-row" key={paper.slug}>
+                      <div>
+                        <h3 className="preprint-row__title">
+                          <Link href={`/preprints/${paper.slug}`}>{paper.title}</Link>
+                        </h3>
+                        <p className="preprint-row__excerpt">
+                          <span className="lang-en">{paper.excerpt}</span>
+                          <span className="lang-zh">{paper.excerptCn}</span>
+                        </p>
 
-                    <div className="preprint-row__meta">
-                      <span className="label">
-                        <span className="lang-en-inline">Author</span>
-                        <span className="lang-zh-inline"> / 作者</span>
-                      </span>
-                      <div className="value">{paper.author}</div>
-                    </div>
-
-                    <div className="preprint-row__meta">
-                      <span className="label">
-                        <span className="lang-en-inline">Date</span>
-                        <span className="lang-zh-inline"> / 日期</span>
-                      </span>
-                      <div className="value">{paper.date}</div>
-                    </div>
-
-                    <div className="preprint-row__meta">
-                      <span className="label">
-                        <span className="lang-en-inline">Stage</span>
-                        <span className="lang-zh-inline"> / 阶段</span>
-                      </span>
-                      <div className="zone-pill">
-                        <span className="lang-en-inline">{paper.stage}</span>
-                        <span className="lang-zh-inline" style={{ color: "var(--muted)" }}>{paper.stageCn}</span>
+                        {/* 评分组件 */}
+                        <SimpleRatingWidget
+                          paperId={paper.slug}
+                          initialRating={paper.averageRating}
+                          initialCount={paper.ratingCount}
+                          onRate={(paperId, rating, newAverage, newCount) => {
+                            // 更新本地状态
+                            setPapers(prevPapers =>
+                              prevPapers.map(p => {
+                                if (p.slug === paperId) {
+                                  const newStage = calculateStage(newAverage, newCount);
+                                  return {
+                                    ...p,
+                                    averageRating: newAverage,
+                                    ratingCount: newCount,
+                                    stage: newStage.slug,
+                                    stageCn: newStage.cn
+                                  };
+                                }
+                                return p;
+                              })
+                            );
+                          }}
+                        />
                       </div>
-                    </div>
-                  </article>
-                ))}
+
+                      <div className="preprint-row__meta">
+                        <span className="label">
+                          <span className="lang-en-inline">Author</span>
+                          <span className="lang-zh-inline"> / 作者</span>
+                        </span>
+                        <div className="value">{paper.author}</div>
+                      </div>
+
+                      <div className="preprint-row__meta">
+                        <span className="label">
+                          <span className="lang-en-inline">Date</span>
+                          <span className="lang-zh-inline"> / 日期</span>
+                        </span>
+                        <div className="value">{paper.date}</div>
+                      </div>
+
+                      <div className="preprint-row__meta">
+                        <span className="label">
+                          <span className="lang-en-inline">Stage</span>
+                          <span className="lang-zh-inline"> / 阶段</span>
+                        </span>
+                        <div className="zone-pill">
+                          <span className="lang-en-inline">{paper.stage}</span>
+                          <span className="lang-zh-inline" style={{ color: "var(--muted)" }}>{paper.stageCn}</span>
+                        </div>
+                      </div>
+                    </article>
+                  ))
+                )}
               </div>
             </div>
           </div>

@@ -1,19 +1,55 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
+import SimpleRatingWidget from "../../components/SimpleRatingWidget";
 import { papers, stages } from "../../lib/data";
+import { calculateStage } from "../../lib/ratingUtils";
 
 function PreprintsContent() {
   const searchParams = useSearchParams();
   const selectedStage = searchParams?.get("stage") || "all";
+  const [paperRatings, setPaperRatings] = useState({});
+
+  // 初始化评分数据
+  useEffect(() => {
+    const initialRatings = {};
+    papers.forEach(paper => {
+      initialRatings[paper.slug] = {
+        averageRating: paper.averageRating || 0,
+        ratingCount: paper.ratingCount || 0,
+        stage: paper.stage,
+        stageCn: paper.stageCn
+      };
+    });
+    setPaperRatings(initialRatings);
+  }, []);
+
+  // 处理评分更新
+  const handleRatingUpdate = (paperId, newRating, newAverage, newCount) => {
+    const newStage = calculateStage(newAverage, newCount);
+    setPaperRatings(prev => ({
+      ...prev,
+      [paperId]: {
+        averageRating: newAverage,
+        ratingCount: newCount,
+        stage: newStage.slug,
+        stageCn: newStage.cn
+      }
+    }));
+  };
+
   const filtered =
     selectedStage === "all"
       ? papers
-      : papers.filter((paper) => paper.stage === selectedStage);
+      : papers.filter((paper) => {
+          const currentRating = paperRatings[paper.slug];
+          const currentStage = currentRating ? currentRating.stage : paper.stage;
+          return currentStage === selectedStage;
+        });
 
   const chips = [
     { slug: "all", nameEn: "All", nameZh: "全部" },
@@ -60,46 +96,63 @@ function PreprintsContent() {
             </div>
 
             <div className="preprint-list">
-              {filtered.map((paper) => (
-                <article className="preprint-row" key={paper.slug}>
-                  <div>
-                    <h2 className="preprint-row__title">
-                      <Link href={`/preprints/${paper.slug}`}>{paper.title}</Link>
-                    </h2>
-                    <p className="preprint-row__excerpt">
-                      <span className="lang-en">{paper.excerpt}</span>
-                      <span className="lang-zh">{paper.excerptCn}</span>
-                    </p>
-                  </div>
+              {filtered.map((paper) => {
+                const currentRating = paperRatings[paper.slug] || {
+                  averageRating: paper.averageRating || 0,
+                  ratingCount: paper.ratingCount || 0,
+                  stage: paper.stage,
+                  stageCn: paper.stageCn
+                };
 
-                  <div className="preprint-row__meta">
-                    <span className="label">
-                      <span className="lang-en-inline">Author</span>
-                      <span className="lang-zh-inline"> / 作者</span>
-                    </span>
-                    <div className="value">{paper.author}</div>
-                  </div>
+                return (
+                  <article className="preprint-row" key={paper.slug}>
+                    <div>
+                      <h2 className="preprint-row__title">
+                        <Link href={`/preprints/${paper.slug}`}>{paper.title}</Link>
+                      </h2>
+                      <p className="preprint-row__excerpt">
+                        <span className="lang-en">{paper.excerpt}</span>
+                        <span className="lang-zh">{paper.excerptCn}</span>
+                      </p>
 
-                  <div className="preprint-row__meta">
-                    <span className="label">
-                      <span className="lang-en-inline">Date</span>
-                      <span className="lang-zh-inline"> / 日期</span>
-                    </span>
-                    <div className="value">{paper.date}</div>
-                  </div>
-
-                  <div className="preprint-row__meta">
-                    <span className="label">
-                      <span className="lang-en-inline">Stage</span>
-                      <span className="lang-zh-inline"> / 阶段</span>
-                    </span>
-                    <div className="zone-pill">
-                      <span className="lang-en-inline">{paper.stage}</span>
-                      <span className="lang-zh-inline" style={{ color: "var(--muted)" }}>{paper.stageCn}</span>
+                      {/* 评分组件 */}
+                      <SimpleRatingWidget
+                        paperId={paper.slug}
+                        initialRating={currentRating.averageRating}
+                        initialCount={currentRating.ratingCount}
+                        onRate={handleRatingUpdate}
+                      />
                     </div>
-                  </div>
-                </article>
-              ))}
+
+                    <div className="preprint-row__meta">
+                      <span className="label">
+                        <span className="lang-en-inline">Author</span>
+                        <span className="lang-zh-inline"> / 作者</span>
+                      </span>
+                      <div className="value">{paper.author}</div>
+                    </div>
+
+                    <div className="preprint-row__meta">
+                      <span className="label">
+                        <span className="lang-en-inline">Date</span>
+                        <span className="lang-zh-inline"> / 日期</span>
+                      </span>
+                      <div className="value">{paper.date}</div>
+                    </div>
+
+                    <div className="preprint-row__meta">
+                      <span className="label">
+                        <span className="lang-en-inline">Stage</span>
+                        <span className="lang-zh-inline"> / 阶段</span>
+                      </span>
+                      <div className="zone-pill">
+                        <span className="lang-en-inline">{currentRating.stage}</span>
+                        <span className="lang-zh-inline" style={{ color: "var(--muted)" }}>{currentRating.stageCn}</span>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
 
               {filtered.length === 0 && (
                 <div style={{ padding: "26px 0", color: "var(--muted)" }}>
