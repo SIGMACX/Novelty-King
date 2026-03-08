@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
+import BackButton from "../../components/BackButton";
 import ProtectedRoute from "../../components/ProtectedRoute";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabase";
@@ -18,7 +19,6 @@ export default function SubmitPage() {
     email: user?.email || "",
     keywords: "",
     abstract: "",
-    researchField: "",
   });
   const [pdfFile, setPdfFile] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -62,10 +62,10 @@ export default function SubmitPage() {
     setMessage(null);
 
     // 验证必填字段
-    if (!formData.title || !formData.firstAuthor || !formData.email || !pdfFile) {
+    if (!formData.title || !formData.firstAuthor || !formData.email || !formData.abstract || !pdfFile) {
       setMessage({
         type: "error",
-        text: "请填写所有必填字段并上传 PDF 文件"
+        text: "请填写所有必填字段（包括论文简介）并上传 PDF 文件"
       });
       setLoading(false);
       return;
@@ -94,9 +94,8 @@ export default function SubmitPage() {
             first_author: formData.firstAuthor,
             corresponding_author: formData.correspondingAuthor || null,
             email: formData.email,
-            research_field: formData.researchField || null,
             keywords: formData.keywords || null,
-            abstract: formData.abstract || null,
+            abstract: formData.abstract,
             pdf_url: pdfBase64, // 存储 Base64 格式的 PDF
             pdf_filename: pdfFile.name,
             pdf_size: pdfFile.size,
@@ -129,7 +128,6 @@ export default function SubmitPage() {
         email: user?.email || "",
         keywords: "",
         abstract: "",
-        researchField: "",
       });
       setPdfFile(null);
       // 重置文件输入
@@ -158,6 +156,7 @@ export default function SubmitPage() {
       <ProtectedRoute>
         <main className="section">
           <div className="container">
+            <BackButton />
             <div className="submit-layout">
               {/* 左侧：投稿表单 */}
               <div className="submit-form-container">
@@ -264,49 +263,23 @@ export default function SubmitPage() {
                       />
                     </div>
 
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label htmlFor="researchField" className="form-label">
-                          研究领域
-                        </label>
-                        <select
-                          id="researchField"
-                          name="researchField"
-                          value={formData.researchField}
-                          onChange={handleInputChange}
-                          className="form-input"
-                        >
-                          <option value="">请选择研究领域</option>
-                          <option value="computer-science">计算机科学</option>
-                          <option value="biology">生物学</option>
-                          <option value="chemistry">化学</option>
-                          <option value="physics">物理学</option>
-                          <option value="mathematics">数学</option>
-                          <option value="medicine">医学</option>
-                          <option value="engineering">工程学</option>
-                          <option value="social-science">社会科学</option>
-                          <option value="other">其他</option>
-                        </select>
-                      </div>
-
-                      <div className="form-group">
-                        <label htmlFor="keywords" className="form-label">
-                          关键词
-                        </label>
-                        <input
-                          id="keywords"
-                          name="keywords"
-                          type="text"
-                          value={formData.keywords}
-                          onChange={handleInputChange}
-                          className="form-input"
-                          placeholder="用分号分隔，如：机器学习;深度学习;神经网络"
-                        />
-                      </div>
+                    <div className="form-group">
+                      <label htmlFor="keywords" className="form-label">
+                        关键词
+                      </label>
+                      <input
+                        id="keywords"
+                        name="keywords"
+                        type="text"
+                        value={formData.keywords}
+                        onChange={handleInputChange}
+                        className="form-input"
+                        placeholder="用分号分隔，如：机器学习;深度学习;神经网络"
+                      />
                     </div>
 
                     <div className="form-group">
-                      <label htmlFor="abstract" className="form-label">
+                      <label htmlFor="abstract" className="form-label required">
                         论文简介（100字以内）
                       </label>
                       <textarea
@@ -314,6 +287,7 @@ export default function SubmitPage() {
                         name="abstract"
                         value={formData.abstract}
                         onChange={handleInputChange}
+                        required
                         className="form-textarea"
                         rows="4"
                         placeholder="简要介绍研究背景、方法和主要发现"
@@ -403,20 +377,6 @@ export default function SubmitPage() {
                     </div>
                     <div className="timeline-item">
                       <div className="timeline-marker">2</div>
-                      <div className="timeline-content">
-                        <strong>专家评审</strong>
-                        <p>2-4周</p>
-                      </div>
-                    </div>
-                    <div className="timeline-item">
-                      <div className="timeline-marker">3</div>
-                      <div className="timeline-content">
-                        <strong>修改提交</strong>
-                        <p>根据意见</p>
-                      </div>
-                    </div>
-                    <div className="timeline-item">
-                      <div className="timeline-marker">4</div>
                       <div className="timeline-content">
                         <strong>最终决定</strong>
                         <p>1周</p>

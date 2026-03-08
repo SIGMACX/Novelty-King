@@ -2,6 +2,7 @@
 
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
+import BackButton from "../../components/BackButton";
 
 export default function AboutPage() {
   return (
@@ -9,6 +10,7 @@ export default function AboutPage() {
       <Header />
       <main className="section">
         <div className="container">
+          <BackButton />
           <div className="section-box">
             <div className="mono" style={{ marginBottom: 12 }}>
               <span className="lang-en-inline">About</span>

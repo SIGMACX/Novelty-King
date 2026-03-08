@@ -1,12 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
+import BackButton from "../../components/BackButton";
 import { supabase } from "../../lib/supabase";
+import { stages } from "../../lib/data";
+import { calculateStage } from "../../lib/ratingUtils";
 
 export default function PublicationsPage() {
+  const searchParams = useSearchParams();
+  const selectedStage = searchParams?.get("stage") || "all";
   const [publications, setPublications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedPub, setSelectedPub] = useState(null);
@@ -27,13 +33,37 @@ export default function PublicationsPage() {
       if (error) throw error;
 
       console.log("Loaded publications:", data);
-      setPublications(data || []);
+
+      // Calculate stage for each publication based on ratings
+      const publicationsWithStages = (data || []).map(pub => {
+        const stage = calculateStage(
+          pub.average_rating || 0,
+          pub.rating_count || 0
+        );
+        return {
+          ...pub,
+          stage: stage.slug,
+          stageCn: stage.cn
+        };
+      });
+
+      setPublications(publicationsWithStages);
     } catch (error) {
       console.error("Error loading publications:", error);
     } finally {
       setLoading(false);
     }
   };
+
+  // Filter publications by selected stage
+  const filteredPublications = selectedStage === "all"
+    ? publications
+    : publications.filter(pub => pub.stage === selectedStage);
+
+  const chips = [
+    { slug: "all", nameEn: "All", nameZh: "全部" },
+    ...stages.map((s) => ({ slug: s.slug, nameEn: s.name, nameZh: s.cn })),
+  ];
 
   const handleDownloadPDF = (pdfUrl, filename) => {
     const link = document.createElement('a');
@@ -49,6 +79,7 @@ export default function PublicationsPage() {
       <Header />
       <main className="section">
         <div className="container">
+          <BackButton />
           <div className="section-box">
             <div className="section__header">
               <div>
@@ -57,17 +88,35 @@ export default function PublicationsPage() {
                   <span className="lang-zh-inline"> / 已发表论文</span>
                 </h2>
                 <div className="section__subtitle">
-                  <span className="lang-en">Browse all published academic papers.</span>
-                  <span className="lang-zh">浏览所有已发表的学术论文。</span>
+                  <span className="lang-en">Browse all published academic papers by cultivation stage.</span>
+                  <span className="lang-zh">按修炼阶段浏览所有已发表的学术论文。</span>
                 </div>
               </div>
+              <div className="mono">
+                {filteredPublications.length}
+                <span className="lang-en-inline"> record{filteredPublications.length === 1 ? "" : "s"}</span>
+                <span className="lang-zh-inline"> 条记录</span>
+              </div>
+            </div>
+
+            <div className="filters">
+              {chips.map((chip) => (
+                <Link
+                  key={chip.slug}
+                  href={chip.slug === "all" ? "/publications" : `/publications?stage=${chip.slug}`}
+                  className={`filter-chip ${selectedStage === chip.slug ? "active" : ""}`}
+                >
+                  <span className="lang-en-inline">{chip.nameEn}</span>
+                  <span className="lang-zh-inline"> / {chip.nameZh}</span>
+                </Link>
+              ))}
             </div>
 
             {loading ? (
               <div style={{ textAlign: 'center', padding: '60px 0' }}>
                 <p style={{ color: 'var(--muted)' }}>加载中...</p>
               </div>
-            ) : publications.length === 0 ? (
+            ) : filteredPublications.length === 0 ? (
               <div className="empty-state" style={{ marginTop: 40 }}>
                 <div style={{ fontSize: '3rem', marginBottom: 16 }}>📚</div>
                 <h3>暂无已发表论文</h3>
@@ -108,10 +157,32 @@ export default function PublicationsPage() {
                   </button>
                 </div>
 
+                {/* 文章简介 */}
+                {selectedPub.abstract && (
+                  <div style={{
+                    marginBottom: 24,
+                    padding: 20,
+                    background: '#f8f9fa',
+                    border: '1px solid var(--line)',
+                    borderRadius: 4
+                  }}>
+                    <h3 style={{ marginTop: 0, marginBottom: 12, fontSize: '1.1rem' }}>
+                      <span className="lang-en-inline">Abstract</span>
+                      <span className="lang-zh-inline"> / 文章简介</span>
+                    </h3>
+                    <p style={{ margin: 0, lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>
+                      {selectedPub.abstract}
+                    </p>
+                  </div>
+                )}
+
                 {/* PDF 查看器 */}
-                <div className="pdf-viewer">
+                <div className="pdf-viewer" style={{ position: 'relative' }}>
                   {selectedPub.pdf_url ? (
                     <>
+                      <div className="pdf-watermark">
+                        Novelty King整活，不代表真实观点
+                      </div>
                       <object
                         data={selectedPub.pdf_url}
                         type="application/pdf"
@@ -173,7 +244,7 @@ export default function PublicationsPage() {
             ) : (
               // 列表视图 - 使用 preprint-row 格式
               <div className="preprint-list">
-                {publications.map((pub) => (
+                {filteredPublications.map((pub) => (
                   <article className="preprint-row" key={pub.id}>
                     <div>
                       <h3 className="preprint-row__title">
@@ -216,11 +287,12 @@ export default function PublicationsPage() {
 
                     <div className="preprint-row__meta">
                       <span className="label">
-                        <span className="lang-en-inline">Field</span>
-                        <span className="lang-zh-inline"> / 领域</span>
+                        <span className="lang-en-inline">Stage</span>
+                        <span className="lang-zh-inline"> / 阶段</span>
                       </span>
                       <div className="zone-pill">
-                        {pub.research_field || '未分类'}
+                        <span className="lang-en-inline">{pub.stage}</span>
+                        <span className="lang-zh-inline" style={{ color: "var(--muted)" }}>{pub.stageCn}</span>
                       </div>
                     </div>
                   </article>

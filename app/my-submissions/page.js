@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
+import BackButton from "../../components/BackButton";
 import ProtectedRoute from "../../components/ProtectedRoute";
 import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabase";
@@ -98,6 +99,7 @@ export default function MySubmissionsPage() {
       <ProtectedRoute>
         <main className="section">
           <div className="container">
+            <BackButton />
             <div className="my-submissions-header">
               <div>
                 <div className="mono" style={{ marginBottom: 8 }}>

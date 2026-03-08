@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
+import BackButton from "../../components/BackButton";
 import SimpleRatingWidget from "../../components/SimpleRatingWidget";
 import { papers, stages } from "../../lib/data";
 import { calculateStage } from "../../lib/ratingUtils";
@@ -59,6 +60,7 @@ function PreprintsContent() {
   return (
       <main className="section">
         <div className="container">
+          <BackButton />
           <div className="section-box">
             <div className="section__header">
               <div>

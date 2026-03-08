@@ -5,6 +5,7 @@ import Link from "next/link";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import SimpleRatingWidget from "../components/SimpleRatingWidget";
+import PageViewCounter from "../components/PageViewCounter";
 import { stages } from "../lib/data";
 import { supabase } from "../lib/supabase";
 import { calculateStage } from "../lib/ratingUtils";
@@ -36,12 +37,12 @@ export default function HomePage() {
           return {
             slug: submission.id,
             title: submission.title,
-            author: submission.author_name || 'Anonymous',
+            author: submission.first_author || 'Anonymous',
             date: new Date(submission.created_at).toLocaleDateString('en-CA'),
             stage: stage.slug,
             stageCn: stage.cn,
-            excerpt: submission.abstract?.substring(0, 150) + '...' || '',
-            excerptCn: submission.abstract?.substring(0, 150) + '...' || '',
+            excerpt: submission.abstract?.substring(0, 150) || '',
+            excerptCn: '',
             averageRating: submission.average_rating || 0,
             ratingCount: submission.rating_count || 0
           };
@@ -65,6 +66,18 @@ export default function HomePage() {
   return (
     <>
       <Header />
+
+      {/* Journal Motto Section */}
+      <section className="journal-motto">
+        <div className="container">
+          <h2 className="journal-motto__title">
+            "If it matters to you, it is novel."
+          </h2>
+          <p className="journal-motto__subtitle">
+            "只要对你有意义，它就是创新。"
+          </p>
+        </div>
+      </section>
 
       <main>
         <section className="hero">
@@ -97,6 +110,11 @@ export default function HomePage() {
                       在这里，创新并不是必须完成的指标，而是在交流与思考中自然产生的结果。
                     </p>
                   </div>
+                </div>
+
+                {/* 右侧浏览统计 */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
+                  <PageViewCounter />
                 </div>
               </div>
 
@@ -144,27 +162,27 @@ export default function HomePage() {
               <div className="section__header">
                 <div>
                   <h2 className="section__title">
-                    <span className="lang-en-inline">Research Areas</span>
-                    <span className="lang-zh-inline"> / 研究领域</span>
+                    <span className="lang-en-inline">Cultivation Pool</span>
+                    <span className="lang-zh-inline"> / 创新修炼池</span>
                   </h2>
                   <div className="section__subtitle">
                     <span className="lang-en">
-                      Browse articles by research stage and publication status.
+                      Browse articles by cultivation level and innovation stage.
                     </span>
                     <span className="lang-zh">
-                      按研究阶段和发表状态浏览文章。
+                      按修炼等级和创新阶段浏览文章。
                     </span>
                   </div>
                 </div>
                 <div className="mono">
-                  <span className="lang-en-inline">Browse by category</span>
-                  <span className="lang-zh-inline"> / 按类别浏览</span>
+                  <span className="lang-en-inline">Browse by level</span>
+                  <span className="lang-zh-inline"> / 按等级浏览</span>
                 </div>
               </div>
 
               <div className="zone-grid">
                 {stages.map((stage) => (
-                  <Link className="zone-card" key={stage.slug} href={`/preprints?stage=${stage.slug}`}>
+                  <Link className="zone-card" key={stage.slug} href={`/publications?stage=${stage.slug}`}>
                     <div className="zone-card__head">
                       <div>
                         <h3 className="zone-card__name lang-en">{stage.name}</h3>
@@ -176,10 +194,6 @@ export default function HomePage() {
                         <span className="lang-zh-inline"> 篇</span>
                       </div>
                     </div>
-                    <p className="zone-card__desc">
-                      <span className="lang-en">{stage.description}</span>
-                      <span className="lang-zh">{stage.descriptionCn}</span>
-                    </p>
                   </Link>
                 ))}
               </div>
@@ -226,8 +240,7 @@ export default function HomePage() {
                           <Link href={`/preprints/${paper.slug}`}>{paper.title}</Link>
                         </h3>
                         <p className="preprint-row__excerpt">
-                          <span className="lang-en">{paper.excerpt}</span>
-                          <span className="lang-zh">{paper.excerptCn}</span>
+                          {paper.excerpt}
                         </p>
 
                         {/* 评分组件 */}

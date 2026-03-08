@@ -4,8 +4,9 @@ import { AuthProvider } from "../contexts/AuthContext";
 import BodyLangSync from "../components/BodyLangSync";
 
 export const metadata = {
-  title: "Novelty - Journal of Academic Novelty",
-  description: "Journal of Academic Novelty - Advancing research through innovative scholarship",
+  title: "Novelty King - A Platform for Novel Research",
+  description:
+    "Novelty King is an open platform for publishing innovative research papers and preprints.",
 };
 
 export default function RootLayout({ children }) {
