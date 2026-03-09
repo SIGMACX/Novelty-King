@@ -146,8 +146,13 @@ export default function SubmitPage() {
   };
 
   const handleDownloadTemplate = () => {
-    // 下载模板
-    window.open("/templates/submission-template.md", "_blank");
+    // 创建一个隐藏的 a 标签来触发下载
+    const link = document.createElement('a');
+    link.href = '/templates/Submission-Template.docx';
+    link.download = 'Novelty-King-投稿模板.docx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
