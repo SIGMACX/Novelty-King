@@ -41,6 +41,9 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="zh-CN">
+      <head>
+        <meta name="google-site-verification" content="202e2d3727eb3f3f" />
+      </head>
       <body data-lang="both">
         <AuthProvider>
           <LanguageProvider>
