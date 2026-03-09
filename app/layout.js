@@ -34,7 +34,7 @@ export const metadata = {
     },
   },
   verification: {
-    google: 'your-google-verification-code',
+    google: '202e2d3727eb3f3f',
   },
 };
 
