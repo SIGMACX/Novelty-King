@@ -135,7 +135,9 @@ function PublicationsContent() {
                 </div>
 
                 <div className="publication-viewer-header">
-                  <h2 style={{ marginTop: 0, marginBottom: 16 }}>{selectedPub.title}</h2>
+                  <h1 style={{ marginTop: 0, marginBottom: 24, fontSize: '2rem', lineHeight: 1.3 }}>
+                    {selectedPub.title}
+                  </h1>
                   <div style={{ display: 'flex', gap: 16, marginBottom: 16, flexWrap: 'wrap', color: 'var(--muted)', fontSize: '0.9rem' }}>
                     <span>👤 {selectedPub.first_author}</span>
                     {selectedPub.corresponding_author && (
@@ -156,20 +158,20 @@ function PublicationsContent() {
                 </div>
 
                 {/* 文章简介 */}
-                {selectedPub.abstract && (
+                {selectedPub.description && (
                   <div style={{
                     marginBottom: 24,
-                    padding: 20,
+                    padding: 24,
                     background: '#f8f9fa',
                     border: '1px solid var(--line)',
                     borderRadius: 4
                   }}>
-                    <h3 style={{ marginTop: 0, marginBottom: 12, fontSize: '1.1rem' }}>
+                    <h3 style={{ marginTop: 0, marginBottom: 16, fontSize: '1.2rem', fontWeight: 600 }}>
                       <span className="lang-en-inline">Abstract</span>
                       <span className="lang-zh-inline"> / 文章简介</span>
                     </h3>
-                    <p style={{ margin: 0, lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>
-                      {selectedPub.abstract}
+                    <p style={{ margin: 0, lineHeight: 1.8, whiteSpace: 'pre-wrap', fontSize: '1rem' }}>
+                      {selectedPub.description}
                     </p>
                   </div>
                 )}
