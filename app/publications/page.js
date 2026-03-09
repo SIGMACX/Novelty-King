@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Header from "../../components/Header";
@@ -10,7 +10,7 @@ import { supabase } from "../../lib/supabase";
 import { stages } from "../../lib/data";
 import { calculateStage } from "../../lib/ratingUtils";
 
-export default function PublicationsPage() {
+function PublicationsContent() {
   const searchParams = useSearchParams();
   const selectedStage = searchParams?.get("stage") || "all";
   const [publications, setPublications] = useState([]);
@@ -75,8 +75,6 @@ export default function PublicationsPage() {
   };
 
   return (
-    <>
-      <Header />
       <main className="section">
         <div className="container">
           <BackButton />
@@ -302,6 +300,25 @@ export default function PublicationsPage() {
           </div>
         </div>
       </main>
+  );
+}
+
+export default function PublicationsPage() {
+  return (
+    <>
+      <Header />
+      <Suspense fallback={
+        <main className="section">
+          <div className="container">
+            <div style={{ padding: "60px 0", textAlign: "center", color: "var(--muted)" }}>
+              <span className="lang-en-inline">Loading...</span>
+              <span className="lang-zh-inline">加载中...</span>
+            </div>
+          </div>
+        </main>
+      }>
+        <PublicationsContent />
+      </Suspense>
       <Footer />
     </>
   );
